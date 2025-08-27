@@ -1,0 +1,79 @@
+[
+  {
+    "id": 1,
+    "rows": 45863,
+    "titleEng": "Trails in the Sky",
+    "titleJpn": "空の軌跡FC",
+    "titleJpnRoman": "Sora no Kiseki FC"
+  },
+  {
+    "id": 2,
+    "rows": 52144,
+    "titleEng": "Trails in the Sky SC",
+    "titleJpn": "空の軌跡SC",
+    "titleJpnRoman": "Sora no Kiseki SC"
+  },
+  {
+    "id": 3,
+    "rows": 19099,
+    "titleEng": "Trails in the Sky the 3rd",
+    "titleJpn": "空の軌跡 the 3rd",
+    "titleJpnRoman": "Sora no Kiseki the 3rd"
+  },
+  {
+    "id": 4,
+    "rows": 54109,
+    "titleEng": "Trails from Zero",
+    "titleJpn": "零の軌跡",
+    "titleJpnRoman": "Zero no Kiseki"
+  },
+  {
+    "id": 5,
+    "rows": 56579,
+    "titleEng": "Trails to Azure",
+    "titleJpn": "碧の軌跡",
+    "titleJpnRoman": "Ao no Kiseki"
+  },
+  {
+    "id": 6,
+    "rows": 54923,
+    "titleEng": "Trails of Cold Steel",
+    "titleJpn": "閃の軌跡",
+    "titleJpnRoman": "Sen no Kiseki"
+  },
+  {
+    "id": 7,
+    "rows": 36839,
+    "titleEng": "Trails of Cold Steel II",
+    "titleJpn": "閃の軌跡II",
+    "titleJpnRoman": "Sen no Kiseki II"
+  },
+  {
+    "id": 8,
+    "rows": 54921,
+    "titleEng": "Trails of Cold Steel III",
+    "titleJpn": "閃の軌跡III",
+    "titleJpnRoman": "Sen no Kiseki III"
+  },
+  {
+    "id": 9,
+    "rows": 55312,
+    "titleEng": "Trails of Cold Steel IV",
+    "titleJpn": "閃の軌跡IV",
+    "titleJpnRoman": "Sen no Kiseki IV"
+  },
+  {
+    "id": 10,
+    "rows": 45543,
+    "titleEng": "Trails into Reverie",
+    "titleJpn": "創の軌跡",
+    "titleJpnRoman": "Hajimari no Kiseki"
+  },
+  {
+    "id": 11,
+    "rows": 72173,
+    "titleEng": "Trails through Daybreak",
+    "titleJpn": "黎の軌跡",
+    "titleJpnRoman": "Kuro no Kiseki"
+  }
+]
