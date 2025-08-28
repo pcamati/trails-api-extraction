@@ -1,8 +1,7 @@
 use serde_json::Value;
 use std::fs;
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     create_data_folder_structure()?;
 
     let urls = Endpoints::new();
@@ -10,50 +9,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = reqwest::Client::new();
 
     // GAMES
-    let resp = client.get(urls.get_games()).send().await?.text().await?;
-    let json = convert_to_json(&resp)?;
-
-    let file = fs::File::create("data/games/games.json")?;
-    serde_json::to_writer_pretty(file, &json)?;
+    let path = "data/games/games.json".to_string();
+    download_data(&client, urls.get_games(), path)?;
 
     // CHARACTERS
-    let resp = client.get(urls.get_chars()).send().await?.text().await?;
-    let json = convert_to_json(&resp)?;
-
-    let file = fs::File::create("data/characters/characters.json")?;
-    serde_json::to_writer_pretty(file, &json)?;
+    let path = "data/characters/characters.json".to_string();
+    download_data(&client, urls.get_chars(), path)?;
 
     // FILES
     let game_id = 1;
-    let resp = client
-        .get(urls.get_files(game_id))
-        .send()
-        .await?
-        .text()
-        .await?;
-    let json = convert_to_json(&resp)?;
-
     let path = format!("data/files/files_game_id_{}.json", game_id);
-    let file = fs::File::create(path)?;
-    serde_json::to_writer_pretty(file, &json)?;
+    download_data(&client, urls.get_files(game_id), path)?;
 
     // SCRIPTS
     let game_id = 1;
     let file_name = "c0100";
-    let resp = client
-        .get(urls.get_scripts(game_id, file_name.to_string()))
-        .send()
-        .await?
-        .text()
-        .await?;
-    let json = convert_to_json(&resp)?;
-
     let path = format!(
         "data/scripts/scripts_game_id_{}_file_name_{}.json",
         game_id, file_name
     );
-    let file = fs::File::create(path)?;
-    serde_json::to_writer_pretty(file, &json)?;
+    download_data(
+        &client,
+        urls.get_scripts(game_id, file_name.to_string()),
+        path,
+    )?;
 
     Ok(())
 }
@@ -107,4 +86,18 @@ impl Endpoints {
         url = url.replace("{game_id}", &game_id.to_string());
         url.replace("{file_name}", &file_name.to_string())
     }
+}
+
+#[tokio::main]
+async fn download_data(
+    client: &reqwest::Client,
+    url: String,
+    path: String,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let resp = client.get(url).send().await?.text().await?;
+    let json = convert_to_json(&resp)?;
+
+    let file = fs::File::create(path)?;
+    serde_json::to_writer_pretty(file, &json)?;
+    Ok(())
 }
