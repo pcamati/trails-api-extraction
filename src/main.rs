@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize, ser};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
 
@@ -11,15 +11,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = reqwest::Client::new();
 
     // GAMES
-    download_data(&client, urls.get_games(), files_names.games)?;
+    download_data(&client, &urls.get_games(), &files_names.games)?;
 
     // CHARACTERS
-    download_data(&client, urls.get_chars(), files_names.chars)?;
+    download_data(&client, &urls.get_chars(), &files_names.chars)?;
 
     // FILES
-    let game_id = 1;
-    let path = format!("data/files/files_game_id_{}.json", game_id);
-    download_data(&client, urls.get_files(&game_id), path)?;
+    download_all_game_files(&client, &urls, &files_names);
 
     // SCRIPTS
     let game_id = 1;
@@ -30,27 +28,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     download_data(
         &client,
-        urls.get_scripts(game_id, file_name.to_string()),
-        path,
+        &urls.get_scripts(game_id, file_name.to_string()),
+        &path,
     )?;
-
-    let path = "data/games/games.json".to_string();
-    let games = parse_games(&path);
-
-    let game_ids: Vec<u32> = match &games {
-        Ok(games) => games.iter().map(|game| game.id).collect(),
-        Err(e) => {
-            println!("Error parsing games: {}", e);
-            vec![]
-        }
-    };
-
-    for (i, game_id) in game_ids.iter().enumerate() {
-        println!("Processing game {}/{}", i + 1, game_ids.len());
-        let path = format!("data/files/files_game_id_{}.json", &game_id);
-        let url = urls.get_files(&game_id);
-        download_data(&client, url, path)?;
-    }
 
     let game_id = 1;
     let files = parse_file_names(&game_id);
@@ -73,7 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             game_id, file_name
         );
         let url = urls.get_scripts(game_id, file_name.to_string());
-        download_data(&client, url, path)?;
+        download_data(&client, &url, &path)?;
     }
 
     Ok(())
@@ -147,11 +127,11 @@ impl FileNames {
         }
     }
 
-    fn get_file(&self, game_id: u32) -> String {
+    fn get_file(&self, game_id: &u32) -> String {
         self.files.replace("{game_id}", &game_id.to_string())
     }
 
-    fn get_script(&self, game_id: u32, file_name: String) -> String {
+    fn get_script(&self, game_id: &u32, file_name: String) -> String {
         self.scripts
             .replace("{game_id}", &game_id.to_string())
             .replace("{file_name}", &file_name)
@@ -161,12 +141,12 @@ impl FileNames {
 #[tokio::main]
 async fn download_data(
     client: &reqwest::Client,
-    url: String,
-    path: String,
+    url: &String,
+    path: &String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Sending request to {}", &url);
-    let resp = client.get(&url).send().await?.text().await?;
-    println!("Response received from {}", &url);
+    println!("Sending request to {}", url);
+    let resp = client.get(url).send().await?.text().await?;
+    println!("Response received from {}", url);
     let json: Value = serde_json::from_str(&resp)?;
 
     let file = fs::File::create(path)?;
@@ -204,4 +184,35 @@ struct File {
     jpnChrNames: Vec<String>,
     jpnPlaceNames: Vec<String>,
     rows: u32,
+}
+
+fn download_all_game_files(
+    client: &reqwest::Client,
+    urls: &Endpoints,
+    files_names: &FileNames,
+) -> () {
+    let games = parse_games(&files_names.games);
+
+    let game_ids: Vec<u32> = match &games {
+        Ok(games) => games.iter().map(|game| game.id).collect(),
+        Err(e) => {
+            println!("Error parsing games: {}", e);
+            vec![]
+        }
+    };
+
+    for (i, game_id) in game_ids.iter().enumerate() {
+        println!("Processing game {}/{}", i + 1, game_ids.len());
+        let path = files_names.get_file(game_id);
+        let url = urls.get_files(&game_id);
+        let result = download_data(&client, &url, &path);
+
+        if result.is_err() {
+            println!(
+                "Error downloading files for game_id {}:\n{}",
+                game_id,
+                result.err().unwrap()
+            )
+        }
+    }
 }
