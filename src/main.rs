@@ -20,7 +20,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // FILES
     let game_id = 1;
     let path = format!("data/files/files_game_id_{}.json", game_id);
-    download_data(&client, urls.get_files(game_id), path)?;
+    download_data(&client, urls.get_files(&game_id), path)?;
 
     // SCRIPTS
     let game_id = 1;
@@ -46,16 +46,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    println!("{:#?}", game_ids);
+    for game_id in &game_ids {
+        let path = format!("data/files/files_game_id_{}.json", &game_id);
+        let url = urls.get_files(&game_id);
+        download_data(&client, url, path)?;
+    }
 
     Ok(())
 }
 
 fn create_data_folder_structure() -> Result<(), std::io::Error> {
+    println!("Creating data folder structure...");
     fs::create_dir_all("data/games")?;
     fs::create_dir_all("data/characters")?;
     fs::create_dir_all("data/files")?;
     fs::create_dir_all("data/scripts")?;
+    println!("Data folder structure created.");
     Ok(())
 }
 
@@ -86,7 +92,7 @@ impl Endpoints {
         format!("{}{}", self.base, self.chars)
     }
 
-    fn get_files(&self, game_id: u32) -> String {
+    fn get_files(&self, game_id: &u32) -> String {
         let url = format!("{}{}", self.base, self.files);
         url.replace("{game_id}", &game_id.to_string())
     }
@@ -104,7 +110,9 @@ async fn download_data(
     url: String,
     path: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let resp = client.get(url).send().await?.text().await?;
+    println!("Sending request to {}", &url);
+    let resp = client.get(&url).send().await?.text().await?;
+    println!("Response received from {}", &url);
     let json: Value = serde_json::from_str(&resp)?;
 
     let file = fs::File::create(path)?;
@@ -126,3 +134,5 @@ struct Game {
     titleJpn: String,
     titleJpnRoman: String,
 }
+
+// async fn testing(client: &reqwest::Client, urls: Vec<String>, paths: Vec<String>) ->
