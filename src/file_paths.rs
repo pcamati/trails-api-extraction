@@ -23,7 +23,7 @@ impl FileNames {
         self.files.replace("{game_id}", &game_id.to_string())
     }
 
-    fn get_script(&self, game_id: &u32, file_name: &String) -> String {
+    pub fn get_script(&self, game_id: &u32, file_name: &String) -> String {
         self.scripts
             .replace("{game_id}", &game_id.to_string())
             .replace("{file_name}", &file_name)
