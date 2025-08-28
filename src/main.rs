@@ -6,16 +6,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     create_data_folder_structure()?;
 
     let urls = Endpoints::new();
+    let files_names = FileNames::new();
 
     let client = reqwest::Client::new();
 
     // GAMES
-    let path = "data/games/games.json".to_string();
-    download_data(&client, urls.get_games(), path)?;
+    download_data(&client, urls.get_games(), files_names.games)?;
 
     // CHARACTERS
-    let path = "data/characters/characters.json".to_string();
-    download_data(&client, urls.get_chars(), path)?;
+    download_data(&client, urls.get_chars(), files_names.chars)?;
 
     // FILES
     let game_id = 1;
@@ -64,7 +63,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     for (i, file_name) in file_names.iter().enumerate() {
-        println!("Processing game {game_id} - file {}/{}", i + 1, file_names.len());
+        println!(
+            "Processing game {game_id} - file {}/{}",
+            i + 1,
+            file_names.len()
+        );
         let path = format!(
             "data/scripts/scripts_game_id_{}_file_name_{}.json",
             game_id, file_name
@@ -122,6 +125,36 @@ impl Endpoints {
         let mut url = format!("{}{}", self.base, self.scripts);
         url = url.replace("{game_id}", &game_id.to_string());
         url.replace("{file_name}", &file_name.to_string())
+    }
+}
+
+struct FileNames {
+    games: String,
+    chars: String,
+    files: String,
+    scripts: String,
+}
+
+impl FileNames {
+    fn new() -> Self {
+        Self {
+            games: String::from("data/games/games.json"),
+            chars: String::from("data/characters/characters.json"),
+            files: String::from("data/files/files_game_id_{game_id}.json"),
+            scripts: String::from(
+                "data/scripts/scripts_game_id_{game_id}_file_name_{file_name}.json",
+            ),
+        }
+    }
+
+    fn get_file(&self, game_id: u32) -> String {
+        self.files.replace("{game_id}", &game_id.to_string())
+    }
+
+    fn get_script(&self, game_id: u32, file_name: String) -> String {
+        self.scripts
+            .replace("{game_id}", &game_id.to_string())
+            .replace("{file_name}", &file_name)
     }
 }
 
