@@ -6,6 +6,8 @@ pub struct FileNames {
 }
 
 impl FileNames {
+    // Defines paths where data will be stored
+    // Brackets serve as placeholders
     pub fn new() -> Self {
         Self {
             games: String::from("data/games/games.json"),
@@ -21,7 +23,7 @@ impl FileNames {
         self.files.replace("{game_id}", &game_id.to_string())
     }
 
-    fn get_script(&self, game_id: &u32, file_name: String) -> String {
+    fn get_script(&self, game_id: &u32, file_name: &String) -> String {
         self.scripts
             .replace("{game_id}", &game_id.to_string())
             .replace("{file_name}", &file_name)

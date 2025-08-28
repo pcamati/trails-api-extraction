@@ -7,6 +7,8 @@ pub struct Endpoints {
 }
 
 impl Endpoints {
+    // Defines each relevant endpoint
+    // Brackets serve as placeholders
     pub fn new() -> Self {
         Self {
             base: String::from("https://trailsinthedatabase.com"),
@@ -30,7 +32,7 @@ impl Endpoints {
         url.replace("{game_id}", &game_id.to_string())
     }
 
-    pub fn get_scripts(&self, game_id: &u32, file_name: String) -> String {
+    pub fn get_scripts(&self, game_id: &u32, file_name: &String) -> String {
         let mut url = format!("{}{}", self.base, self.scripts);
         url = url.replace("{game_id}", &game_id.to_string());
         url.replace("{file_name}", &file_name.to_string())

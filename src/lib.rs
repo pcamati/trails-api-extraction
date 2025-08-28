@@ -1,26 +1,28 @@
-pub mod endpoints;
-pub mod files_names;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
 
+pub mod endpoints;
+pub mod file_paths;
+
 pub fn create_data_folder_structure() -> Result<(), std::io::Error> {
-    println!("Creating data folder structure...");
     fs::create_dir_all("data/games")?;
     fs::create_dir_all("data/characters")?;
     fs::create_dir_all("data/files")?;
     fs::create_dir_all("data/scripts")?;
-    println!("Data folder structure created.");
     Ok(())
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 struct Game {
     id: u32,
     rows: u32,
-    titleEng: String,
-    titleJpn: String,
-    titleJpnRoman: String,
+    #[serde(rename = "titleEng")]
+    title_eng: String,
+    #[serde(rename = "titleJpn")]
+    title_jpn: String,
+    #[serde(rename = "titleJpnRoman")]
+    title_jpn_roman: String,
 }
 
 fn parse_games(path: &str) -> Result<Vec<Game>, serde_json::Error> {
@@ -28,20 +30,28 @@ fn parse_games(path: &str) -> Result<Vec<Game>, serde_json::Error> {
     serde_json::from_str::<Vec<Game>>(&data)
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 struct File {
-    engChrNames: Vec<String>,
-    engPlaceNames: Vec<String>,
-    fname: String,
-    gameId: u32,
-    jpnChrNames: Vec<String>,
-    jpnPlaceNames: Vec<String>,
+    #[serde(rename = "engChrNames")]
+    char_names_eng: Vec<String>,
+    #[serde(rename = "engPlaceNames")]
+    plac_names_eng: Vec<String>,
+    #[serde(rename = "fname")]
+    file_name: String,
+    #[serde(rename = "gameId")]
+    game_id: u32,
+    #[serde(rename = "jpnChrNames")]
+    char_names_jpn: Vec<String>,
+    #[serde(rename = "jpnPlaceNames")]
+    place_names_jpn: Vec<String>,
     rows: u32,
 }
 
-fn parse_file_names(game_id: &u32) -> Result<Vec<File>, serde_json::Error> {
-    let path = format!("data/files/files_game_id_{}.json", game_id);
-    let data = fs::read_to_string(path).unwrap();
+fn parse_file_names(
+    game_id: &u32,
+    paths: &file_paths::FileNames,
+) -> Result<Vec<File>, serde_json::Error> {
+    let data = fs::read_to_string(paths.get_file(&game_id)).unwrap();
     serde_json::from_str::<Vec<File>>(&data)
 }
 
@@ -51,23 +61,20 @@ pub async fn download_data(
     url: &String,
     path: &String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Sending request to {}", url);
     let resp = client.get(url).send().await?.text().await?;
-    println!("Response received from {}", url);
     let json: Value = serde_json::from_str(&resp)?;
 
     let file = fs::File::create(path)?;
     serde_json::to_writer_pretty(file, &json)?;
-
     Ok(())
 }
 
 pub fn download_all_game_files(
     client: &reqwest::Client,
     urls: &endpoints::Endpoints,
-    files_names: &files_names::FileNames,
+    paths: &file_paths::FileNames,
 ) -> () {
-    let games = parse_games(&files_names.games);
+    let games = parse_games(&paths.games);
 
     let game_ids: Vec<u32> = match &games {
         Ok(games) => games.iter().map(|game| game.id).collect(),
@@ -79,7 +86,7 @@ pub fn download_all_game_files(
 
     for (i, game_id) in game_ids.iter().enumerate() {
         println!("Processing game {}/{}", i + 1, game_ids.len());
-        let path = files_names.get_file(game_id);
+        let path = paths.get_file(game_id);
         let url = urls.get_files(&game_id);
         let result = download_data(&client, &url, &path);
 
@@ -96,9 +103,9 @@ pub fn download_all_game_files(
 pub fn download_all_game_scripts(
     client: &reqwest::Client,
     urls: &endpoints::Endpoints,
-    files_names: &files_names::FileNames,
+    paths: &file_paths::FileNames,
 ) -> () {
-    let games = parse_games(&files_names.games);
+    let games = parse_games(&paths.games);
 
     let game_ids: Vec<u32> = match &games {
         Ok(games) => games.iter().map(|game| game.id).collect(),
@@ -109,9 +116,9 @@ pub fn download_all_game_scripts(
     };
 
     for (i, game_id) in game_ids.iter().enumerate() {
-        let files = parse_file_names(&game_id);
+        let files = parse_file_names(&game_id, &paths);
         let file_names: Vec<String> = match &files {
-            Ok(files) => files.iter().map(|file| file.fname.clone()).collect(),
+            Ok(files) => files.iter().map(|file| file.file_name.clone()).collect(),
             Err(e) => {
                 println!("Error parsing games: {}", e);
                 vec![]
@@ -130,7 +137,7 @@ pub fn download_all_game_scripts(
                 "data/scripts/scripts_game_id_{}_file_name_{}.json",
                 game_id, file_name
             );
-            let url = urls.get_scripts(game_id, file_name.to_string());
+            let url = urls.get_scripts(game_id, &file_name.to_string());
             let result = download_data(&client, &url, &path);
 
             if result.is_err() {
