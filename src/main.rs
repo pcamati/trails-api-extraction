@@ -46,9 +46,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    for game_id in &game_ids {
+    for (i, game_id) in game_ids.iter().enumerate() {
+        println!("Processing game {}/{}", i + 1, game_ids.len());
         let path = format!("data/files/files_game_id_{}.json", &game_id);
         let url = urls.get_files(&game_id);
+        download_data(&client, url, path)?;
+    }
+
+    let game_id = 1;
+    let files = parse_file_names(&game_id);
+    let file_names: Vec<String> = match &files {
+        Ok(files) => files.iter().map(|file| file.fname.clone()).collect(),
+        Err(e) => {
+            println!("Error parsing games: {}", e);
+            vec![]
+        }
+    };
+
+    for (i, file_name) in file_names.iter().enumerate() {
+        println!("Processing game {game_id} - file {}/{}", i + 1, file_names.len());
+        let path = format!(
+            "data/scripts/scripts_game_id_{}_file_name_{}.json",
+            game_id, file_name
+        );
+        let url = urls.get_scripts(game_id, file_name.to_string());
         download_data(&client, url, path)?;
     }
 
@@ -126,6 +147,12 @@ fn parse_games(path: &str) -> Result<Vec<Game>, serde_json::Error> {
     serde_json::from_str::<Vec<Game>>(&data)
 }
 
+fn parse_file_names(game_id: &u32) -> Result<Vec<File>, serde_json::Error> {
+    let path = format!("data/files/files_game_id_{}.json", game_id);
+    let data = fs::read_to_string(path).unwrap();
+    serde_json::from_str::<Vec<File>>(&data)
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Game {
     id: u32,
@@ -135,4 +162,13 @@ struct Game {
     titleJpnRoman: String,
 }
 
-// async fn testing(client: &reqwest::Client, urls: Vec<String>, paths: Vec<String>) ->
+#[derive(Serialize, Deserialize, Debug)]
+struct File {
+    engChrNames: Vec<String>,
+    engPlaceNames: Vec<String>,
+    fname: String,
+    gameId: u32,
+    jpnChrNames: Vec<String>,
+    jpnPlaceNames: Vec<String>,
+    rows: u32,
+}
