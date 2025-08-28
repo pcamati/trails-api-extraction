@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize, ser};
 use serde_json::Value;
 use std::fs;
 
@@ -34,11 +35,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         path,
     )?;
 
-    Ok(())
-}
+    let path = "data/games/games.json".to_string();
+    let games = parse_games(&path);
 
-fn convert_to_json(string: &str) -> Result<Value, serde_json::Error> {
-    serde_json::from_str(&string)
+    let game_ids: Vec<u32> = match &games {
+        Ok(games) => games.iter().map(|game| game.id).collect(),
+        Err(e) => {
+            println!("Error parsing games: {}", e);
+            vec![]
+        }
+    };
+
+    println!("{:#?}", game_ids);
+
+    Ok(())
 }
 
 fn create_data_folder_structure() -> Result<(), std::io::Error> {
@@ -95,9 +105,24 @@ async fn download_data(
     path: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let resp = client.get(url).send().await?.text().await?;
-    let json = convert_to_json(&resp)?;
+    let json: Value = serde_json::from_str(&resp)?;
 
     let file = fs::File::create(path)?;
     serde_json::to_writer_pretty(file, &json)?;
+
     Ok(())
+}
+
+fn parse_games(path: &str) -> Result<Vec<Game>, serde_json::Error> {
+    let data = fs::read_to_string(path).unwrap();
+    serde_json::from_str::<Vec<Game>>(&data)
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Game {
+    id: u32,
+    rows: u32,
+    titleEng: String,
+    titleJpn: String,
+    titleJpnRoman: String,
 }
