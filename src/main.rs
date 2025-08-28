@@ -20,41 +20,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     download_all_game_files(&client, &urls, &files_names);
 
     // SCRIPTS
-    let game_id = 1;
-    let file_name = "c0100";
-    let path = format!(
-        "data/scripts/scripts_game_id_{}_file_name_{}.json",
-        game_id, file_name
-    );
-    download_data(
-        &client,
-        &urls.get_scripts(game_id, file_name.to_string()),
-        &path,
-    )?;
-
-    let game_id = 1;
-    let files = parse_file_names(&game_id);
-    let file_names: Vec<String> = match &files {
-        Ok(files) => files.iter().map(|file| file.fname.clone()).collect(),
-        Err(e) => {
-            println!("Error parsing games: {}", e);
-            vec![]
-        }
-    };
-
-    for (i, file_name) in file_names.iter().enumerate() {
-        println!(
-            "Processing game {game_id} - file {}/{}",
-            i + 1,
-            file_names.len()
-        );
-        let path = format!(
-            "data/scripts/scripts_game_id_{}_file_name_{}.json",
-            game_id, file_name
-        );
-        let url = urls.get_scripts(game_id, file_name.to_string());
-        download_data(&client, &url, &path)?;
-    }
+    download_all_game_scripts(&client, &urls, &files_names);
 
     Ok(())
 }
@@ -101,7 +67,7 @@ impl Endpoints {
         url.replace("{game_id}", &game_id.to_string())
     }
 
-    fn get_scripts(&self, game_id: u32, file_name: String) -> String {
+    fn get_scripts(&self, game_id: &u32, file_name: String) -> String {
         let mut url = format!("{}{}", self.base, self.scripts);
         url = url.replace("{game_id}", &game_id.to_string());
         url.replace("{file_name}", &file_name.to_string())
@@ -213,6 +179,57 @@ fn download_all_game_files(
                 game_id,
                 result.err().unwrap()
             )
+        }
+    }
+}
+
+fn download_all_game_scripts(
+    client: &reqwest::Client,
+    urls: &Endpoints,
+    files_names: &FileNames,
+) -> () {
+    let games = parse_games(&files_names.games);
+
+    let game_ids: Vec<u32> = match &games {
+        Ok(games) => games.iter().map(|game| game.id).collect(),
+        Err(e) => {
+            println!("Error parsing games: {}", e);
+            vec![]
+        }
+    };
+
+    for (i, game_id) in game_ids.iter().enumerate() {
+        let files = parse_file_names(&game_id);
+        let file_names: Vec<String> = match &files {
+            Ok(files) => files.iter().map(|file| file.fname.clone()).collect(),
+            Err(e) => {
+                println!("Error parsing games: {}", e);
+                vec![]
+            }
+        };
+
+        for (j, file_name) in file_names.iter().enumerate() {
+            println!(
+                "Processing game {}/{} - file {}/{}",
+                i + 1,
+                game_ids.len(),
+                j + 1,
+                file_names.len()
+            );
+            let path = format!(
+                "data/scripts/scripts_game_id_{}_file_name_{}.json",
+                game_id, file_name
+            );
+            let url = urls.get_scripts(game_id, file_name.to_string());
+            let result = download_data(&client, &url, &path);
+
+            if result.is_err() {
+                println!(
+                    "Error downloading files for game_id {}:\n{}",
+                    game_id,
+                    result.err().unwrap()
+                )
+            }
         }
     }
 }
