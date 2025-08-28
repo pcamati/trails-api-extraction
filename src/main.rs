@@ -2,6 +2,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
 
+use trails_api_extraction::endpoints::Endpoints;
+use trails_api_extraction::files_names::FileNames;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     create_data_folder_structure()?;
 
@@ -33,75 +36,6 @@ fn create_data_folder_structure() -> Result<(), std::io::Error> {
     fs::create_dir_all("data/scripts")?;
     println!("Data folder structure created.");
     Ok(())
-}
-
-struct Endpoints {
-    base: String,
-    games: String,
-    chars: String,
-    files: String,
-    scripts: String,
-}
-
-impl Endpoints {
-    fn new() -> Self {
-        Self {
-            base: String::from("https://trailsinthedatabase.com"),
-            games: String::from("/api/game"),
-            chars: String::from("/api/chr"),
-            files: String::from("/api/file?game_id={game_id}"),
-            scripts: String::from("/api/script/detail/{game_id}/{file_name}"),
-        }
-    }
-
-    fn get_games(&self) -> String {
-        format!("{}{}", self.base, self.games)
-    }
-
-    fn get_chars(&self) -> String {
-        format!("{}{}", self.base, self.chars)
-    }
-
-    fn get_files(&self, game_id: &u32) -> String {
-        let url = format!("{}{}", self.base, self.files);
-        url.replace("{game_id}", &game_id.to_string())
-    }
-
-    fn get_scripts(&self, game_id: &u32, file_name: String) -> String {
-        let mut url = format!("{}{}", self.base, self.scripts);
-        url = url.replace("{game_id}", &game_id.to_string());
-        url.replace("{file_name}", &file_name.to_string())
-    }
-}
-
-struct FileNames {
-    games: String,
-    chars: String,
-    files: String,
-    scripts: String,
-}
-
-impl FileNames {
-    fn new() -> Self {
-        Self {
-            games: String::from("data/games/games.json"),
-            chars: String::from("data/characters/characters.json"),
-            files: String::from("data/files/files_game_id_{game_id}.json"),
-            scripts: String::from(
-                "data/scripts/scripts_game_id_{game_id}_file_name_{file_name}.json",
-            ),
-        }
-    }
-
-    fn get_file(&self, game_id: &u32) -> String {
-        self.files.replace("{game_id}", &game_id.to_string())
-    }
-
-    fn get_script(&self, game_id: &u32, file_name: String) -> String {
-        self.scripts
-            .replace("{game_id}", &game_id.to_string())
-            .replace("{file_name}", &file_name)
-    }
 }
 
 #[tokio::main]
