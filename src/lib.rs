@@ -89,7 +89,11 @@ pub fn download_all_game_files(
     let game_ids = get_game_ids(&paths);
 
     for (i, game_id) in game_ids.iter().enumerate() {
-        println!("Extracting files metadata for game {}/{}", i + 1, game_ids.len());
+        println!(
+            "Extracting files metadata for game {}/{}",
+            i + 1,
+            game_ids.len()
+        );
 
         let path = paths.get_file(game_id);
         let url = urls.get_files(game_id);
